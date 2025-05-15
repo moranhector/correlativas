@@ -99,7 +99,21 @@ class carreras extends BaseController
     }
     
     
-
+    public function eliminar_correlativa($id)
+    {
+        $model = new \App\Models\GestionCorrelativasModel();
+    
+        $correlativa = $model->find($id);
+    
+        if (!$correlativa) {
+            return redirect()->back()->with('error', 'La correlativa no fue encontrada.');
+        }
+    
+        $model->delete($id);
+    
+        return redirect()->back()->with('success', 'Correlativa eliminada correctamente.');
+    }
+    
 
     // Historial de Mesas del IES
     public function mesas()

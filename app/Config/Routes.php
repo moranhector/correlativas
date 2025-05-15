@@ -59,3 +59,5 @@ $routes->post('api/correlativas/agregar', 'Api::agregar_correlativa');
 
 
 
+$routes->post('/carreras/eliminar_correlativa/(:num)', 'Carreras::eliminar_correlativa/$1');
+

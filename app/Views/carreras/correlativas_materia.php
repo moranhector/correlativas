@@ -14,13 +14,26 @@
                 </p>
             </div>
 
+            <?php if (session()->getFlashdata('success')) : ?>
+                <div class="alert alert-success"><?= session()->getFlashdata('success') ?></div>
+            <?php endif; ?>
+
+            <?php if (session()->getFlashdata('error')) : ?>
+                <div class="alert alert-danger"><?= session()->getFlashdata('error') ?></div>
+            <?php endif; ?>
+
+
+
+
+
+
             <div class="card mb-3">
                 <div class="card-body">
                     <form id="form-agregar-correlativa" class="form-inline">
                         <input type="hidden" name="materia_id" id="materia_id" value="<?= esc($vMATERIA['id']) ?>">
-                       
+
                         <!-- PASO MATERIA OCULTO PARA EL SCRIPT DE BUSQUEDA -->
-                       
+
                         <input type="hidden" id="carrera_id" value="<?= esc($vMATERIA['carrera']) ?>">
 
 
@@ -67,9 +80,12 @@
                                         <td><?= esc($dato['correlativa_id']) ?></td>
                                         <td><?= esc($dato['correlativa_nombre']) ?></td>
                                         <td>
-                                            <a href="<?= base_url() . '/carreras/editar_correlativa/' . $dato['id']; ?>" class="btn btn-success btn-sm" title="Editar">
-                                                <i class="fas fa-pencil-alt"></i>
-                                            </a>
+                                            <form action="<?= base_url() . '/carreras/eliminar_correlativa/' . $dato['id']; ?>" method="post" style="display:inline;" onsubmit="return confirm('¿Estás seguro de que querés eliminar esta correlativa?');">
+                                                <?= csrf_field() ?>
+                                                <button type="submit" class="btn btn-danger btn-sm" title="Eliminar">
+                                                    <i class="fas fa-trash-alt"></i>
+                                                </button>
+                                            </form>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
@@ -85,75 +101,77 @@
 
 
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    console.log('entra');
-    const inputBuscar = document.getElementById('buscar_correlativa');
-    const sugerencias = document.getElementById('sugerencias');
-    const correlativaId = document.getElementById('correlativa_id');
-    const carreraId = document.getElementById('carrera_id').value;    
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('entra');
+        const inputBuscar = document.getElementById('buscar_correlativa');
+        const sugerencias = document.getElementById('sugerencias');
+        const correlativaId = document.getElementById('correlativa_id');
+        const carreraId = document.getElementById('carrera_id').value;
 
-    inputBuscar.addEventListener('input', function () {
-        console.log('entra 1');
-        const query = this.value.trim();
-        if (query.length < 3) {
-            sugerencias.innerHTML = '';
-            return;
-        }
-
-
-
-        fetch(`<?= base_url(); ?>/api/materias/buscar?term=${encodeURIComponent(query)}&carrera=${encodeURIComponent(carreraId)}`)      
-        // fetch(`<?= base_url(); ?>/api/materias/buscar?term=${encodeURIComponent(query)}`)
-            .then(res => res.json())
-            .then(data => {
+        inputBuscar.addEventListener('input', function() {
+            console.log('entra 1');
+            const query = this.value.trim();
+            if (query.length < 3) {
                 sugerencias.innerHTML = '';
-                if (data.length === 0) {
-                    sugerencias.innerHTML = '<small class="text-muted">Sin resultados</small>';
-                } else {
-                    const lista = document.createElement('ul');
-                    lista.classList.add('list-group');
-                    data.forEach(m => {
-                        const item = document.createElement('li');
-                        item.className = 'list-group-item list-group-item-action';
-                        item.textContent = `${m.id} - ${m.nombre}`;
-                        item.style.cursor = 'pointer';
-                        item.onclick = function () {
-                            inputBuscar.value = m.nombre;
-                            correlativaId.value = m.id;
-                            sugerencias.innerHTML = '';
-                        };
-                        lista.appendChild(item);
-                    });
-                    sugerencias.appendChild(lista);
-                }
-            });
-    });
+                return;
+            }
 
-    document.getElementById('form-agregar-correlativa').addEventListener('submit', function (e) {
-        console.log('entra 3');
-        e.preventDefault();
 
-        const materiaId = document.getElementById('materia_id').value;
-        const correlativa = correlativaId.value;
 
-        if (!correlativa) {
-            alert('Seleccioná una correlativa válida.');
-            return;
-        }
+            fetch(`<?= base_url(); ?>/api/materias/buscar?term=${encodeURIComponent(query)}&carrera=${encodeURIComponent(carreraId)}`)
+                // fetch(`<?= base_url(); ?>/api/materias/buscar?term=${encodeURIComponent(query)}`)
+                .then(res => res.json())
+                .then(data => {
+                    sugerencias.innerHTML = '';
+                    if (data.length === 0) {
+                        sugerencias.innerHTML = '<small class="text-muted">Sin resultados</small>';
+                    } else {
+                        const lista = document.createElement('ul');
+                        lista.classList.add('list-group');
+                        data.forEach(m => {
+                            const item = document.createElement('li');
+                            item.className = 'list-group-item list-group-item-action';
+                            item.textContent = `${m.id} - ${m.nombre}`;
+                            item.style.cursor = 'pointer';
+                            item.onclick = function() {
+                                inputBuscar.value = m.nombre;
+                                correlativaId.value = m.id;
+                                sugerencias.innerHTML = '';
+                            };
+                            lista.appendChild(item);
+                        });
+                        sugerencias.appendChild(lista);
+                    }
+                });
+        });
 
-        fetch("<?= base_url(); ?>/api/correlativas/agregar", {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({
-                materia_id: materiaId,
-                correlativa_id: correlativa
-            })
-        })
-        .then(res => res.json())
-        .then(data => {
-            alert(data.message || 'Correlativa agregada');
-            window.location.reload();
+        document.getElementById('form-agregar-correlativa').addEventListener('submit', function(e) {
+            console.log('entra 3');
+            e.preventDefault();
+
+            const materiaId = document.getElementById('materia_id').value;
+            const correlativa = correlativaId.value;
+
+            if (!correlativa) {
+                alert('Seleccioná una correlativa válida.');
+                return;
+            }
+
+            fetch("<?= base_url(); ?>/api/correlativas/agregar", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        materia_id: materiaId,
+                        correlativa_id: correlativa
+                    })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    alert(data.message || 'Correlativa agregada');
+                    window.location.reload();
+                });
         });
     });
-});
 </script>
